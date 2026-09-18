@@ -1,5 +1,6 @@
 // Integration smoke test against the running Docker app. Creates clearly named fictitious test records.
 import assert from 'node:assert/strict';
+import { demoPeople } from '../lib/demo-people';
 const base=process.env.TEST_ORIGIN||'http://localhost:3000';
 const password=process.env.DEMO_PASSWORD||'DemoClinica2026!';
 const stamp=Date.now().toString();
@@ -12,7 +13,7 @@ class Client{
  action(action:string,payload:any){return this.call('/api/data',{action,payload});}
 }
 async function main(){
- const sessions:Record<string,Client>={};for(const role of ['master','secretaria','professor','preceptor','aluno','paciente']){const c=new Client();await c.login(`${role}@clinica.test`);const state=await c.data();assert.equal(state.me.role,role);sessions[role]=c;}console.log('OK: login e leitura dos seis perfis');
+ const sessions:Record<string,Client>={};for(const person of demoPeople){const c=new Client();await c.login(person.cpf);const state=await c.data();assert.equal(state.me.role,person.role);sessions[person.role]=c;}console.log('OK: login e leitura dos seis perfis');
  const master=sessions.master,teacher=new Client(),preceptor=new Client();const conf=(await master.data()).settings;
  for(const [role,client,offset] of [['professor',teacher,2],['preceptor',preceptor,3]] as const){
   const login=`${role}-${stamp}@example.test`;

@@ -7,6 +7,7 @@ Sistema da Hackathon Ciência da Computação 2026.2, Anhanguera Guarapari, **Te
 | Material | Acesso |
 |---|---|
 | Explicação do problema, solução e tecnologias | [Apresentação do projeto](docs/apresentacao.md) |
+| Roteiro de demonstração dos seis perfis | [Roteiro de apresentação](docs/roteiro-apresentacao.md) |
 | Fluxograma do funcionamento | [Fluxo principal](docs/fluxo-principal.md) |
 | Estrutura do sistema e suas conexões | [Arquitetura](docs/arquitetura.md) |
 | Diagrama e descrição das tabelas | [Modelo do banco de dados](docs/banco-de-dados.md) |
@@ -65,12 +66,12 @@ Com `DEMO_SEED=true`, o primeiro início em um banco vazio cria as contas abaixo
 
 | Perfil | E-mail | CPF fictício de demonstração |
 |---|---|---|
-| Master | master@clinica.test | 11144477735 |
-| Secretaria | secretaria@clinica.test | 52998224725 |
-| Professor | professor@clinica.test | 12345678909 |
-| Preceptor | preceptor@clinica.test | 98765432100 |
-| Aluno | aluno@clinica.test | 39053344705 |
-| Paciente | paciente@clinica.test | 86288366757 |
+| Master | marina.azevedo@clinica.test | 11144477735 |
+| Secretaria | camila.ferreira@clinica.test | 52998224725 |
+| Professor | andre.ribeiro@clinica.test | 12345678909 |
+| Preceptor | beatriz.cardoso@clinica.test | 98765432100 |
+| Aluno | lucas.santos@alunos.test | 39053344705 |
+| Paciente | helena.nascimento@example.test | 86288366757 |
 
 Esses registros são sintéticos, sem relação pretendida com pessoas reais. O seed é idempotente: não sobrescreve um banco já preenchido. Alterar `DEMO_PASSWORD` depois da primeira carga não altera senhas existentes.
 
@@ -99,6 +100,8 @@ Esses registros são sintéticos, sem relação pretendida com pessoas reais. O 
 - Worker com e-mails de recuperação, agendamento, cancelamento e lembretes 72/24/5 horas antes. O Mailpit captura os e-mails; não envia para endereços reais.
 
 ## Banco e arquivos
+
+Veja [como abrir e entender o banco](docs/consultar-banco.md). Os cadastros-base com nome, CPF, telefone, e-mail e nascimento estão em [lib/demo-people.ts](lib/demo-people.ts).
 
 - `database/schema.sql`: estrutura PostgreSQL, chaves, índices e restrições.
 - `lib/seed.ts`: dados fictícios reproduzíveis e calendário relativo ao primeiro início.
