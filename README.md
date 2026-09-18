@@ -1,8 +1,8 @@
 # Integra-Clinica-Anhanguera
 
-**Acesse o sistema publicado:** [https://integra-clinica-anhanguera.onrender.com](https://integra-clinica-anhanguera.onrender.com)
+**Acesse o sistema publicado no Render:** [https://integra-clinica-anhanguera.onrender.com](https://integra-clinica-anhanguera.onrender.com)
 
-O link público funciona sem Docker no computador. `http://localhost:3000` é o endereço da instalação local. Cada ambiente possui seu próprio banco.
+Para avaliar o projeto, abra o link público acima. A aplicação e o banco já estão hospedados no Render; não é necessário instalar Docker, Node.js ou PostgreSQL no computador de quem apenas vai usar a demonstração.
 
 Sistema da Hackathon Ciência da Computação 2026.2, Anhanguera Guarapari, **Tema 2**. Organiza supervisão, turmas, documentação e consultas da comunidade, com seis perfis de acesso.
 
@@ -34,7 +34,15 @@ docs/         Documentação da entrega
 
 `Dockerfile` e `compose.yaml` configuram a execução. `package.json` e `package-lock.json` descrevem as dependências. `render.yaml` configura a demonstração gratuita já publicada no Render. A estrutura SQL e o gerador de dados fictícios são versionados; o banco com os dados de uso e seus backups ficam fora do GitHub.
 
-## Executar com Docker
+## Acesso pela demonstração publicada
+
+1. Abra [https://integra-clinica-anhanguera.onrender.com](https://integra-clinica-anhanguera.onrender.com).
+2. Escolha um dos perfis fictícios na tela de login.
+3. Use a senha de demonstração informada na seção [Contas fictícias](#contas-fictícias-da-demonstração).
+
+O Render pode levar alguns segundos para reativar a aplicação depois de um período sem acesso. O banco da demonstração é separado do banco usado no desenvolvimento local.
+
+## Desenvolvimento local (opcional) com Docker
 
 Requisitos: Docker Desktop iniciado, com contêineres Linux / WSL 2.
 
@@ -63,9 +71,9 @@ docker compose start
 
 Para atualizar o código: `docker compose up --build -d`. O volume `postgres_data` preserva os dados. **Não use `docker compose down -v` se quiser manter o banco**: a opção remove os volumes.
 
-## Acessos fictícios
+## Contas fictícias da demonstração
 
-Com `DEMO_SEED=true`, o primeiro início em um banco vazio cria as contas abaixo. A senha é o valor de `DEMO_PASSWORD` no `.env`; o exemplo usa **DemoClinica2026!**. É possível entrar pelo CPF ou pelo e-mail.
+As contas abaixo são fictícias e podem ser usadas na demonstração publicada. A senha atual do Render é **DemoClinica2026!**; em outra instalação, a senha inicial será o valor de `DEMO_PASSWORD`. É possível entrar pelo CPF ou pelo e-mail.
 
 | Perfil | E-mail | CPF fictício de demonstração |
 |---|---|---|
@@ -116,7 +124,7 @@ Veja [como abrir e entender o banco](docs/consultar-banco.md). Os cadastros-base
 - `docs/lgpd.md`: medidas de proteção de dados e pendências institucionais para produção.
 - Documentos e relatórios de até 5 MB ficam no banco, em `bytea`, simplificando a persistência e o backup do MVP.
 
-## Desenvolvimento sem Docker
+## Desenvolvimento local (opcional) sem Docker
 
 Node.js 22 recomendado. A instalação das dependências usa o lockfile.
 
@@ -177,7 +185,7 @@ Repositório desta entrega: https://github.com/Rafael-garotoprograma-dor/HACKATH
 
 O `render.yaml` configura a demonstração gratuita com um serviço web Docker e PostgreSQL, sem worker. No Render, escolha **New > Blueprint**, selecione este repositório e a branch `main`.
 
-Para esta implantação, `APP_ORIGIN` é `https://integra-clinica-anhanguera.onrender.com`, sem barra final. `DEMO_PASSWORD` define a senha inicial dos seis perfis fictícios no banco vazio; use o valor escolhido no painel do Render. A senha do exemplo local não é necessariamente a senha hospedada.
+Para esta implantação, `APP_ORIGIN` é `https://integra-clinica-anhanguera.onrender.com`, sem barra final. O serviço publicado usa as contas e a senha indicadas em [Contas fictícias da demonstração](#contas-fictícias-da-demonstração). Em uma nova implantação com banco vazio, `DEMO_PASSWORD` define a senha inicial.
 
 `DEMO_SEED=true` cria os seis perfis fictícios em um banco vazio. O banco hospedado é independente do banco local: os cadastros feitos no computador não são transferidos automaticamente. A senha é definida apenas na primeira carga; mudar a variável depois não troca as senhas existentes.
 
