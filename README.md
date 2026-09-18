@@ -134,11 +134,11 @@ git status --short
 git add .
 git commit -m "Documenta entrega e publicação do MVP"
 git branch -M main
-git remote add origin https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
+git remote add origin https://github.com/Rafael-garotoprograma-dor/HACKATHON.git
 git push -u origin main
 ```
 
-O endereço do repositório é deliberadamente um placeholder: ele deve ser substituído pelo repositório que você criar ou autorizar no seu GitHub.
+Repositório desta entrega: https://github.com/Rafael-garotoprograma-dor/HACKATHON
 
 ### Render
 
