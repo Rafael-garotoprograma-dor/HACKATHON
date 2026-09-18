@@ -32,7 +32,7 @@ tests/        Testes automatizados
 docs/         Documentação da entrega
 ```
 
-`Dockerfile` e `compose.yaml` configuram a execução. `package.json` e `package-lock.json` descrevem as dependências. `render.yaml` configura a demonstração gratuita já publicada no Render. A estrutura SQL e o gerador de dados fictícios são versionados; o banco com os dados de uso e seus backups ficam fora do GitHub.
+`render.yaml` registra a configuração da demonstração publicada no Render. A estrutura SQL e o gerador de dados fictícios são versionados; o banco com os dados de uso e seus backups ficam fora do GitHub.
 
 ## Acesso pela demonstração publicada
 
@@ -40,36 +40,7 @@ docs/         Documentação da entrega
 2. Escolha um dos perfis fictícios na tela de login.
 3. Use a senha de demonstração informada na seção [Contas fictícias](#contas-fictícias-da-demonstração).
 
-O Render pode levar alguns segundos para reativar a aplicação depois de um período sem acesso. O banco da demonstração é separado do banco usado no desenvolvimento local.
-
-## Desenvolvimento local (opcional) com Docker
-
-Requisitos: Docker Desktop iniciado, com contêineres Linux / WSL 2.
-
-```powershell
-Copy-Item .env.example .env
-docker compose up --build -d
-```
-
-Se `.env` já existir, preserve suas configurações. Abra **http://localhost:3000**. O PostgreSQL fica em uma rede interna; não é necessário instalar o banco no Windows. A aplicação aguarda a verificação de saúde do banco antes de iniciar.
-
-O Compose inicia:
-
-| Serviço | Responsabilidade |
-|---|---|
-| app | Next.js: páginas e API, porta 3000 |
-| db | PostgreSQL 17 com volume persistente |
-| worker | Fila de e-mails e lembretes |
-| mailpit | Caixa de e-mails local da demonstração em http://localhost:8025 |
-
-```powershell
-docker compose ps
-docker compose logs --tail=80 app worker
-docker compose stop
-docker compose start
-```
-
-Para atualizar o código: `docker compose up --build -d`. O volume `postgres_data` preserva os dados. **Não use `docker compose down -v` se quiser manter o banco**: a opção remove os volumes.
+O Render pode levar alguns segundos para reativar a aplicação depois de um período sem acesso. O banco da demonstração já está configurado no próprio serviço.
 
 ## Contas fictícias da demonstração
 
@@ -108,7 +79,7 @@ Esses registros são sintéticos, sem relação pretendida com pessoas reais. O 
 - Cancelamento de encontros, bloqueio de sala, ausência/substituição do preceptor, troca de professor e acesso ao histórico.
 - Pedidos de transferência encaminhados pelo professor e efetivados em lote pelo Master; falhas desfazem toda a operação.
 - Mensagens, avisos, ocorrências e histórico administrativo.
-- Worker com e-mails de recuperação, agendamento, cancelamento e lembretes 72/24/5 horas antes. O Mailpit captura os e-mails; não envia para endereços reais.
+- Código preparado para fila de e-mails de recuperação, agendamento, cancelamento e lembretes 72/24/5 horas antes; esses envios não ficam ativos no serviço gratuito publicado.
 
 ## Banco e arquivos
 
@@ -124,73 +95,16 @@ Veja [como abrir e entender o banco](docs/consultar-banco.md). Os cadastros-base
 - `docs/lgpd.md`: medidas de proteção de dados e pendências institucionais para produção.
 - Documentos e relatórios de até 5 MB ficam no banco, em `bytea`, simplificando a persistência e o backup do MVP.
 
-## Desenvolvimento local (opcional) sem Docker
-
-Node.js 22 recomendado. A instalação das dependências usa o lockfile.
-
-```powershell
-npm ci
-npm run dev
-```
-
-Sem `DATABASE_URL`, o modo de desenvolvimento usa PGlite, um PostgreSQL embutido com dados em `.data/clinica`. O `.env.local` de desenvolvimento pode conter `DEMO_SEED=true` e `DEMO_PASSWORD=DemoClinica2026!`. Esse arquivo não é versionado. **O banco local é separado do banco Docker.** Não rode app e worker simultaneamente sobre o mesmo diretório PGlite; o worker é destinado ao PostgreSQL do Compose.
-
-```powershell
-npm run typecheck
-npm test
-npm run build
-```
-
-Os testes utilizam um banco isolado em diretório temporário. Não alteram os dados da demonstração.
-
-Para os testes integrados, com o Docker iniciado:
-
-```powershell
-docker compose exec -T app node --import tsx scripts/smoke.ts
-docker compose exec -T app node --import tsx scripts/security-smoke.ts
-```
-
-Esses dois testes criam registros fictícios identificados no banco da demonstração. O primeiro inclui concorrência pela última vaga; o segundo usa uma conta exclusiva para verificar recuperação e revogação de acesso. Resultados e limites estão em `docs/verificacao.md`.
-
-## Backup e retomada
-
-Para congelar as alterações e conferir uma cópia restaurada em um banco temporário:
-
-```powershell
-docker compose stop app worker
-node scripts/backup.mjs --verify
-docker compose start
-```
-
-O arquivo `.dump` é salvo em `backups/`, fora do versionamento e da imagem Docker. Contém todos os dados, incluindo arquivos enviados. O teste de restauração nunca sobrescreve o banco principal. Guarde uma cópia desse arquivo e do `.env` em local privado. Para apenas encerrar o ambiente, use `docker compose stop`; para continuar, `docker compose start`.
-
 ## Publicação
 
 ### GitHub
 
-O repositório local já está organizado para receber o código-fonte, documentação, estrutura do banco, fontes e testes. Antes do primeiro `push`, confirme que `.env`, `.env.local`, `backups/`, `.data/` e os volumes do Docker não fazem parte do commit:
-
-```powershell
-git status --short
-git add .
-git commit -m "Documenta entrega e publicação do MVP"
-git branch -M main
-git remote add origin https://github.com/Rafael-garotoprograma-dor/HACKATHON.git
-git push -u origin main
-```
-
-Repositório desta entrega: https://github.com/Rafael-garotoprograma-dor/HACKATHON
+Código-fonte e documentação desta entrega: [repositório HACKATHON no GitHub](https://github.com/Rafael-garotoprograma-dor/HACKATHON).
 
 ### Render
 
-O `render.yaml` configura a demonstração gratuita com um serviço web Docker e PostgreSQL, sem worker. No Render, escolha **New > Blueprint**, selecione este repositório e a branch `main`.
-
 Para esta implantação, `APP_ORIGIN` é `https://integra-clinica-anhanguera.onrender.com`, sem barra final. O serviço publicado usa as contas e a senha indicadas em [Contas fictícias da demonstração](#contas-fictícias-da-demonstração). Em uma nova implantação com banco vazio, `DEMO_PASSWORD` define a senha inicial.
 
-`DEMO_SEED=true` cria os seis perfis fictícios em um banco vazio. O banco hospedado é independente do banco local: os cadastros feitos no computador não são transferidos automaticamente. A senha é definida apenas na primeira carga; mudar a variável depois não troca as senhas existentes.
-
-Os planos declarados são `free`. O site pode entrar em repouso após 15 minutos sem tráfego e o banco gratuito expira após 30 dias. Nesta configuração, lembretes e recuperação por e-mail não são processados, pois não há worker nem SMTP. O Docker local continua incluindo o worker e o Mailpit.
-
-Para uso institucional, configure serviços de produção, SMTP, backups, contas individuais e `DEMO_SEED=false`.
+O plano gratuito pode colocar o site em repouso após um período sem acesso; basta aguardar alguns segundos ao abrir o link. A demonstração usa dados fictícios e não deve receber dados reais de pacientes.
 
 O projeto contém código de MVP para avaliação e continuidade. Leia as decisões e limites em `docs/arquitetura.md` antes de usar em operação institucional.
