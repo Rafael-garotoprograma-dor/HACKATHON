@@ -37,7 +37,7 @@ docs/         Documentação da entrega
 ## Acesso pela demonstração publicada
 
 1. Abra [https://integra-clinica-anhanguera.onrender.com](https://integra-clinica-anhanguera.onrender.com).
-2. Escolha um dos perfis fictícios na tela de login.
+2. Na seção **Um olhar para cada perfil**, clique em Master, Secretaria, Professor, Preceptor, Aluno ou Paciente. O e-mail da conta será preenchido automaticamente.
 3. Use a senha de demonstração informada na seção [Contas fictícias](#contas-fictícias-da-demonstração).
 
 O Render pode levar alguns segundos para reativar a aplicação depois de um período sem acesso. O banco da demonstração já está configurado no próprio serviço.

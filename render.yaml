@@ -40,6 +40,8 @@ services:
         value: "true"
       - key: DEMO_SEED
         value: "false"
+      - key: SHOW_DEMO_ACCOUNTS
+        value: "true"
 
 databases:
   - name: clinica-escola-db
