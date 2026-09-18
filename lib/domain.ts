@@ -1,4 +1,6 @@
 import { type DB, type Row, one } from './db';
+import { clinicContact } from './clinic-contact';
+import { bookingActions } from './booking-actions';
 import { AppError, requireThat, id, text, integer, timeValid, minutes, time, localDay, startInstant, dateValid, hashPassword, cpfValid } from './security';
 export type User=Row & {id:string;role:string;name:string;course:string;approved:boolean;permissions:string[];subjects:string[];period:number};
 export async function config(db:DB){return (await one(db,'SELECT data FROM settings WHERE id=1')).data;}
@@ -58,7 +60,7 @@ export async function mutate(db:DB,u:User,action:string,p:Row){
  case 'settings': {
   roles(u,'master');const data=p.data;requireThat(data&&typeof data==='object','Configuração inválida.');requireThat(dateValid(data.start)&&dateValid(data.end)&&data.start<=data.end&&dateValid(data.enrollmentEnd),'Datas inválidas.');requireThat(timeValid(data.open)&&timeValid(data.close)&&data.open<data.close&&timeValid(data.reportDeadline),'Horários inválidos.');
   const courses=(data.courses||[]).map((s:unknown)=>text(s)).filter(Boolean);requireThat(courses.length>0,'Cadastre ao menos um curso.');const weekdays=(data.weekdays||[]).map((v:unknown)=>integer(v,0,6));requireThat(weekdays.length>0,'Selecione os dias de funcionamento.');
-  const clean={semester:text(data.semester),start:data.start,end:data.end,enrollmentEnd:data.enrollmentEnd,open:data.open,close:data.close,weekdays,courses,documents:(data.documents||[]).map((s:unknown)=>text(s)).filter(Boolean),reportDeadline:data.reportDeadline,cancelHours:integer(data.cancelHours,0,168),clinicStudents:integer(data.clinicStudents),clinicPatients:integer(data.clinicPatients),archived:!!data.archived};requireThat(clean.semester&&clean.documents.length,'Informe semestre e documentos obrigatórios.');
+  const clean={...clinicContact({...cfg,...data}),semester:text(data.semester),start:data.start,end:data.end,enrollmentEnd:data.enrollmentEnd,open:data.open,close:data.close,weekdays,courses,documents:(data.documents||[]).map((s:unknown)=>text(s)).filter(Boolean),reportDeadline:data.reportDeadline,cancelHours:integer(data.cancelHours,0,168),clinicStudents:integer(data.clinicStudents),clinicPatients:integer(data.clinicPatients),archived:!!data.archived};requireThat(clean.semester&&clean.documents.length,'Informe semestre e documentos obrigatórios.');
   await db.query('UPDATE settings SET data=$1 WHERE id=1',[JSON.stringify(clean)]);break;
  }
  case 'room':{
@@ -126,7 +128,7 @@ export async function mutate(db:DB,u:User,action:string,p:Row){
   const b=await one(db,'SELECT * FROM bookings WHERE id=$1',[p.id]);requireThat(b,'Consulta não encontrada.');requireThat(isStaff(u)||b.owner_id===u.id,'Consulta de outro paciente.',403);requireThat(['confirmado','cancelado_paciente','reagendado','nao_compareceu'].includes(p.status),'Status inválido.');const m=await meetingInfo(db,b.meeting_id);
   if(p.status==='reagendado'){roles(u,'secretaria','master');requireThat(b.status==='cancelado_instituicao','Consulta não aguardava reagendamento.');}
   else {requireThat(['agendado','confirmado'].includes(b.status),'Consulta já encerrada.');if(p.status==='nao_compareceu'){roles(u,'secretaria','master');requireThat(startInstant(m.day,b.slot)<new Date(),'Atendimento ainda não ocorreu.');}else requireThat(startInstant(m.day,b.slot)>new Date(),'Horário da consulta já passou.');}
-  if(p.status==='cancelado_paciente'&&!isStaff(u))requireThat((startInstant(m.day,b.slot).getTime()-Date.now())/3600000>=cfg.cancelHours||(p.decline===true&&b.status==='agendado'&&(startInstant(m.day,b.slot).getTime()-Date.now())/3600000<=24),'Prazo de cancelamento online encerrado. Procure a Secretaria.');
+  if(p.status==='cancelado_paciente'&&!isStaff(u)){const controls=bookingActions({status:b.status,slot:b.slot},m.day,cfg.cancelHours);requireThat(controls.canCancelNormally||(p.decline===true&&controls.canDecline),'Prazo de cancelamento online encerrado. Procure a Secretaria.');}
   await db.query('UPDATE bookings SET status=$2,reason=$3 WHERE id=$1',[p.id,p.status,text(p.reason,1000)]);if(p.status==='cancelado_paciente')await notifyRole(db,'secretaria','Paciente cancelou ou recusou confirmação',`Consulta ${m.day}, ${b.slot}, paciente ${b.patient.name}.`);break;
  }
  case 'cancel-meeting':{

@@ -6,7 +6,7 @@
 |---|---|
 | TypeScript (`npm run typecheck`) | Passou |
 | Build de produção Linux no Docker | Passou |
-| Testes automatizados isolados | 24 testes, 24 passaram, zero falhas (contagem inclui o agrupamento de domínio) |
+| Testes automatizados isolados | 29 testes, 29 passaram, zero falhas (contagem inclui o agrupamento de domínio) |
 | Fluxo integrado dos seis perfis no PostgreSQL | Passou |
 | Duas reservas simultâneas da última vaga no PostgreSQL | Uma aceita e uma rejeitada |
 | Troca encadeada entre turmas lotadas | Passou; falha em um destino desfaz a operação |
@@ -32,6 +32,8 @@ Os testes de domínio usam PGlite isolado. `scripts/smoke.ts` e `scripts/securit
 - Bloqueios e ausências atuam nos encontros atuais/futuros; substituição de preceptor não reabre cancelamentos por outros motivos.
 - Saúde da aplicação verifica a conexão com o banco; lembretes retomam a etapa ainda útil após uma parada.
 - Aplicação e Mailpit ficam acessíveis somente pelo próprio computador na configuração de demonstração.
+- Cadastro e edição de senha não reutilizam autofill de CPF e têm controle de visualização; conta do usuário, endereço da clínica e telefone da Secretaria foram verificados na interface.
+- Consulta já existente pode ser confirmada ou cancelada mesmo quando a representação de vagas está cheia; a reserva duplicada continua bloqueada.
 
 ## Limites da entrega
 

@@ -76,7 +76,11 @@ Esses registros são sintéticos, sem relação pretendida com pessoas reais. O 
 - `lib/seed.ts`: dados fictícios reproduzíveis e calendário relativo ao primeiro início.
 - `lib/domain.ts`: regras e operações em transações.
 - `lib/state.ts`: dados filtrados por perfil e acesso aos arquivos.
+- `docs/requisitos.md`: problema, atores e requisitos funcionais/não funcionais.
+- `docs/fluxo-principal.md`: representação Mermaid do fluxo principal e da sequência de segurança.
 - `docs/arquitetura.md`: modelo de dados, decisões e limites.
+- `docs/lgpd.md`: medidas de proteção de dados e pendências institucionais para produção.
+- `docs/fontes/Hackathon_2026_2.pdf` e `docs/fontes/Transferencia_Projeto.md`: fontes usadas para o escopo.
 - Documentos e relatórios de até 5 MB ficam no banco, em `bytea`, simplificando a persistência e o backup do MVP.
 
 ## Desenvolvimento sem Docker
@@ -121,6 +125,31 @@ O arquivo `.dump` é salvo em `backups/`, fora do versionamento e da imagem Dock
 
 ## Publicação
 
-Docker prepara a execução, mas não publica o site sozinho. No servidor, configure domínio/HTTPS, `APP_ORIGIN`, `COOKIE_SECURE=true`, credenciais do banco e um SMTP real. Remova as contas de demonstração, desative `DEMO_SEED` e não exponha o Mailpit. Faça backups e defina a política institucional de acesso/retenção antes de inserir dados reais.
+### GitHub
+
+O repositório local já está organizado para receber o código-fonte, documentação, estrutura do banco, fontes e testes. Antes do primeiro `push`, confirme que `.env`, `.env.local`, `backups/`, `.data/` e os volumes do Docker não fazem parte do commit:
+
+```powershell
+git status --short
+git add .
+git commit -m "Documenta entrega e publicação do MVP"
+git branch -M main
+git remote add origin https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
+git push -u origin main
+```
+
+O endereço do repositório é deliberadamente um placeholder: ele deve ser substituído pelo repositório que você criar ou autorizar no seu GitHub.
+
+### Render
+
+O arquivo `render.yaml` é um Blueprint pronto para conectar o repositório a um serviço web Docker, um worker de lembretes e um PostgreSQL gerenciado. No painel do Render, use **New > Blueprint**, selecione o repositório e revise os valores marcados como `sync: false` antes de aplicar:
+
+1. `APP_ORIGIN`: URL HTTPS pública do serviço web.
+2. `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` e `MAIL_FROM`: servidor SMTP institucional.
+3. Confirme o plano do worker e do banco conforme o orçamento da equipe; o worker precisa permanecer ligado para os lembretes.
+
+O Render fornece o `DATABASE_URL` privado a partir do banco definido no Blueprint. A imagem usa o `CMD` do `Dockerfile` para o site e `npm run worker` para o worker. O endpoint `/api/health` é usado para a verificação de saúde. O filesystem do serviço é efêmero, portanto os dados devem ficar no PostgreSQL e os backups devem ser exportados regularmente.
+
+Docker prepara a execução local, mas não publica o site sozinho. Em produção, mantenha HTTPS, `COOKIE_SECURE=true`, `DEMO_SEED=false`, SMTP real e backups protegidos. Remova as contas de demonstração e não exponha o Mailpit.
 
 O projeto contém código de MVP para avaliação e continuidade. Leia as decisões e limites em `docs/arquitetura.md` antes de usar em operação institucional.

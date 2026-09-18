@@ -19,6 +19,15 @@ test('Fluxos e invariantes do sistema',async t=>{
  try{
  await t.test('Senhas são verificadas por hash e CPF tem dígitos verificadores',()=>{const hash=hashPassword('UmaSenhaSegura!');assert.notEqual(hash,'UmaSenhaSegura!');assert.equal(verifyPassword('UmaSenhaSegura!',hash),true);assert.equal(verifyPassword('errada',hash),false);assert.equal(cpfValid('11144477735'),true);assert.equal(cpfValid('00000000000'),false);});
  await t.test('Aluno não altera configurações administrativas',async()=>{await assert.rejects(run(student,'settings',{data:{}}),/permissão/);});
+ await t.test('Endereço e telefone são configuráveis pelo Master e persistem',async()=>{
+  const original=(await one(db,'SELECT data FROM settings WHERE id=1')).data;
+  await run(master,'settings',{data:{...original,clinicAddress:'Endereço fictício',clinicMapUrl:'https://maps.google.com/',secretaryPhone:'(27) 3333-4444'}});
+  const saved=(await one(db,'SELECT data FROM settings WHERE id=1')).data;
+  assert.equal(saved.clinicAddress,'Endereço fictício');assert.equal(saved.secretaryPhone,'(27) 3333-4444');
+  await assert.rejects(run(patient,'settings',{data:saved}),/permissão/);
+  await assert.rejects(run(master,'settings',{data:{...saved,clinicMapUrl:'javascript:alert(1)'}}),/localização/);
+  await run(master,'settings',{data:{...original,clinicAddress:'',clinicMapUrl:'',secretaryPhone:''}});
+ });
  await t.test('Dados e arquivos privados não são expostos ao paciente',async()=>{const view=await snapshot(db,patient);assert.equal(view.documents.length,0);assert.equal(view.reports.length,0);assert.equal(view.enrollments.length,0);assert.equal('password' in view.me,false);const doc=await one(db,'SELECT id FROM documents LIMIT 1');assert.equal(await authorizeFile(db,patient,'documents',doc.id),null);assert.ok(await authorizeFile(db,prof,'documents',doc.id));});
  await t.test('Fila de curso não exige vínculo de turma com professor avaliador',async()=>{const other={...prof,id:'prof-novo'};await db.query("INSERT INTO users(id,name,email,cpf,password,role,course,permissions) VALUES('prof-novo','Novo professor','novo@example.test','22222222222','hash','professor','Odontologia',$1)",[JSON.stringify(['Odontologia'])]);const doc=await one(db,'SELECT id FROM documents LIMIT 1');await run(other,'review-document',{id:doc.id,status:'aprovado',comment:'Conferido'});assert.equal((await user('aluno')).approved,true);});
  await t.test('Nova turma não pode sobrepor sala ou supervisão existente',async()=>{const c=await one(db,'SELECT * FROM classes LIMIT 1');await assert.rejects(run(prof,'class',{name:'Conflitante',course:c.course,availability_id:c.availability_id,periods:[8],start_date:c.start_date,end_date:c.end_date,duration:60}),/Conflito/);});
@@ -49,13 +58,32 @@ test('Fluxos e invariantes do sistema',async t=>{
   const view=await snapshot(db,student);const booking=view.bookings.find(x=>x.id===a.id);assert.ok(booking);assert.equal(booking.patient.cpf,undefined);assert.match(booking.patient.name,/Atendimento/);
   const secretary=await snapshot(db,await user('secretaria'));assert.equal(secretary.users.find(x=>x.id===student.id)?.cpf,undefined);
  });
+ await t.test('Confirmar e cancelar alteram a reserva existente mesmo com a última vaga ocupada',async()=>{
+  await db.query('UPDATE meetings SET patient_limit=1 WHERE id=$1',[future.id]);
+  const booked=await run(patient,'booking',{meeting_id:future.id,slot:'10:00',patient:{type:'proprio'}});
+  const count=(await one(db,'SELECT count(*)::int AS n FROM bookings')).n;
+  const slots=await availableSlots(db,await meetingInfo(db,future.id));assert.ok(!slots.some(s=>s.time==='10:00'));
+  await run(patient,'booking-status',{id:booked.id,status:'confirmado'});
+  assert.equal((await one(db,'SELECT status FROM bookings WHERE id=$1',[booked.id])).status,'confirmado');
+  await run(patient,'booking-status',{id:booked.id,status:'cancelado_paciente',reason:'Teste'});
+  assert.equal((await one(db,'SELECT status FROM bookings WHERE id=$1',[booked.id])).status,'cancelado_paciente');
+  assert.equal((await one(db,'SELECT count(*)::int AS n FROM bookings')).n,count);
+ });
  await t.test('Lembretes recuperam parada sem duplicar nem enviar janelas antigas',async()=>{
   const m=await meetingInfo(db,future.id);const b=await one(db,"SELECT id FROM bookings WHERE meeting_id=$1 AND slot='09:00' LIMIT 1",[m.id]);const when=new Date(`${m.day}T09:00:00-03:00`).getTime();
   const tick=(hours:number)=>transaction(tx=>enqueueReminders(tx,new Date(when-hours*3600000)));
   await tick(71);await tick(71);assert.equal((await one(db,'SELECT count(*)::int AS n FROM outbox WHERE dedupe=$1',[`${b.id}:72`])).n,1);
   await tick(20);await tick(4);assert.equal((await one(db,'SELECT count(*)::int AS n FROM outbox WHERE dedupe LIKE $1',[`${b.id}:%`])).n,3);
  });
- await t.test('Cancelar encontro cancela consultas e notifica Secretaria',async()=>{const m=await meetingInfo(db,future.id);await run(prof,'cancel-meeting',{meeting_id:m.id,reason:'Teste operacional'});assert.equal((await one(db,'SELECT status FROM meetings WHERE id=$1',[m.id])).status,'cancelado');assert.equal((await one(db,'SELECT status FROM bookings WHERE meeting_id=$1',[m.id])).status,'cancelado_instituicao');assert.ok(await one(db,"SELECT id FROM notices WHERE user_id='secretaria'"));});
+ await t.test('Cancelar encontro cancela consultas ativas e preserva cancelamentos anteriores',async()=>{
+  const m=await meetingInfo(db,future.id);
+  const active=(await one(db,"SELECT count(*)::int AS n FROM bookings WHERE meeting_id=$1 AND status IN ('agendado','confirmado')",[m.id])).n;
+  await run(prof,'cancel-meeting',{meeting_id:m.id,reason:'Teste operacional'});
+  assert.equal((await one(db,'SELECT status FROM meetings WHERE id=$1',[m.id])).status,'cancelado');
+  assert.equal((await one(db,"SELECT count(*)::int AS n FROM bookings WHERE meeting_id=$1 AND status='cancelado_instituicao'",[m.id])).n,active);
+  assert.equal((await one(db,"SELECT status FROM bookings WHERE meeting_id=$1 AND slot='10:00'",[m.id])).status,'cancelado_paciente');
+  assert.ok(await one(db,"SELECT id FROM notices WHERE user_id='secretaria'"));
+ });
  await t.test('Encontro cancelado dispensa relatórios',async()=>{await assert.rejects(run(student,'report',{meeting_id:future.id}),/cancelado/);});
  const original=await one(db,'SELECT * FROM meetings LIMIT 1');const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);const pastId=id();await db.query('INSERT INTO meetings(id,class_id,day,preceptor_id,room_id) VALUES($1,$2,$3,$4,$5)',[pastId,original.class_id,localDay(yesterday),'preceptor','sala-1']);await db.query("UPDATE enrollments SET created_at=now()-interval '10 days'");
  const report={meeting_id:pastId,filename:'relatorio.txt',mime:'text/plain',content:Buffer.from('Atividade fictícia supervisionada.').toString('base64')};
