@@ -5,8 +5,8 @@
 - Cadastro local: seis perfis-base e 14 cadastros sintéticos atualizados; dois cadastros fora dos testes preservados. Mantidos 22 usuários, 6 inscrições e 9 consultas.
 - Backup anterior à atualização: `backups/clinica-20260918043957.dump`, com restauração verificada. SHA-256: `2cb052f9e6f13aefb5e94de60951701aeba9b48f687ee05335dab34dbf82e2ea`.
 - TypeScript e 29 testes passaram após a revisão dos cadastros. Build Docker concluído e saúde local retornou HTTP 200.
-- Render conectado ao repositório HACKATHON, branch main; implantação do commit `1dae1fb` observada como Live. Tela pública de login aberta em https://clinica-escola-web.onrender.com.
-- A verificação pública acima não confirma login nem o fluxo completo no Render. E-mails automáticos e recuperação por e-mail estão indisponíveis nesta configuração sem worker/SMTP. O banco hospedado é independente do local.
+- Render conectado ao repositório HACKATHON, branch main; novo serviço gratuito implantado a partir do commit `37d24fb` e observado como Live. Tela pública e login do professor foram verificados em https://integra-clinica-anhanguera.onrender.com.
+- O fluxo público completo ainda não foi exercitado em todos os perfis. E-mails automáticos e recuperação por e-mail estão indisponíveis nesta configuração sem worker/SMTP. O banco hospedado é independente do local.
 
 Os resultados abaixo registram a verificação local original, não testes completos no Render.
 

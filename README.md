@@ -1,6 +1,6 @@
 # Integra-Clinica-Anhanguera
 
-**Acesse o sistema publicado:** [https://clinica-escola-web.onrender.com](https://clinica-escola-web.onrender.com)
+**Acesse o sistema publicado:** [https://integra-clinica-anhanguera.onrender.com](https://integra-clinica-anhanguera.onrender.com)
 
 O link público funciona sem Docker no computador. `http://localhost:3000` é o endereço da instalação local. Cada ambiente possui seu próprio banco.
 
@@ -177,7 +177,7 @@ Repositório desta entrega: https://github.com/Rafael-garotoprograma-dor/HACKATH
 
 O `render.yaml` configura a demonstração gratuita com um serviço web Docker e PostgreSQL, sem worker. No Render, escolha **New > Blueprint**, selecione este repositório e a branch `main`.
 
-Para esta implantação, `APP_ORIGIN` deve ser `https://clinica-escola-web.onrender.com`, sem barra final. `DEMO_PASSWORD` define a senha inicial dos seis perfis fictícios no banco vazio; use o valor escolhido no painel do Render. A senha do exemplo local não é necessariamente a senha hospedada.
+Para esta implantação, `APP_ORIGIN` é `https://integra-clinica-anhanguera.onrender.com`, sem barra final. `DEMO_PASSWORD` define a senha inicial dos seis perfis fictícios no banco vazio; use o valor escolhido no painel do Render. A senha do exemplo local não é necessariamente a senha hospedada.
 
 `DEMO_SEED=true` cria os seis perfis fictícios em um banco vazio. O banco hospedado é independente do banco local: os cadastros feitos no computador não são transferidos automaticamente. A senha é definida apenas na primeira carga; mudar a variável depois não troca as senhas existentes.
 

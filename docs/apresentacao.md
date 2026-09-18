@@ -39,6 +39,6 @@ O código separa componentes visuais, rotas da API, regras de negócio, autentic
 
 ## Resultado e limites
 
-Foi desenvolvido um MVP com persistência real, execução por Docker, dados fictícios reproduzíveis e testes automatizados. O código está no GitHub e a demonstração está publicada em [clinica-escola-web.onrender.com](https://clinica-escola-web.onrender.com). A tela de login foi verificada; a validação completa das operações no ambiente hospedado ainda está pendente. O plano gratuito não executa o worker de e-mails.
+Foi desenvolvido um MVP com persistência real, execução por Docker, dados fictícios reproduzíveis e testes automatizados. O código está no GitHub e a demonstração está publicada em [integra-clinica-anhanguera.onrender.com](https://integra-clinica-anhanguera.onrender.com). A tela de login e o acesso do professor foram verificados. O plano gratuito não executa o worker de e-mails.
 
 O sistema é uma ferramenta de gestão acadêmica e agendamento. Não inclui prontuário clínico completo, assinatura digital nem fila automática de pacientes. Os resultados de testes e demais limites estão em [verificacao.md](verificacao.md) e [arquitetura.md](arquitetura.md).
