@@ -172,14 +172,14 @@ Repositório desta entrega: https://github.com/Rafael-garotoprograma-dor/HACKATH
 
 ### Render
 
-O arquivo `render.yaml` é um Blueprint pronto para conectar o repositório a um serviço web Docker, um worker de lembretes e um PostgreSQL gerenciado. No painel do Render, use **New > Blueprint**, selecione o repositório e revise os valores marcados como `sync: false` antes de aplicar:
+O `render.yaml` configura a demonstração gratuita com um serviço web Docker e PostgreSQL, sem worker. No Render, escolha **New > Blueprint**, selecione este repositório e a branch `main`.
 
-1. `APP_ORIGIN`: URL HTTPS pública do serviço web.
-2. `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` e `MAIL_FROM`: servidor SMTP institucional.
-3. Confirme o plano do worker e do banco conforme o orçamento da equipe; o worker precisa permanecer ligado para os lembretes.
+Preencha `APP_ORIGIN` com a URL HTTPS exata do serviço web, sem barra final, e `DEMO_PASSWORD` com uma senha exclusiva de pelo menos 10 caracteres. Se a URL ainda não estiver disponível, use provisoriamente `https://example.invalid` e corrija em Environment assim que o Render atribuir o endereço, antes de testar o login.
 
-O Render fornece o `DATABASE_URL` privado a partir do banco definido no Blueprint. A imagem usa o `CMD` do `Dockerfile` para o site e `npm run worker` para o worker. O endpoint `/api/health` é usado para a verificação de saúde. O filesystem do serviço é efêmero, portanto os dados devem ficar no PostgreSQL e os backups devem ser exportados regularmente.
+`DEMO_SEED=true` cria os seis perfis fictícios em um banco vazio. O banco hospedado é independente do banco local: os cadastros feitos no computador não são transferidos automaticamente. A senha é definida apenas na primeira carga; mudar a variável depois não troca as senhas existentes.
 
-Docker prepara a execução local, mas não publica o site sozinho. Em produção, mantenha HTTPS, `COOKIE_SECURE=true`, `DEMO_SEED=false`, SMTP real e backups protegidos. Remova as contas de demonstração e não exponha o Mailpit.
+Os planos declarados são `free`. O site pode entrar em repouso após 15 minutos sem tráfego e o banco gratuito expira após 30 dias. Nesta configuração, lembretes e recuperação por e-mail não são processados, pois não há worker nem SMTP. O Docker local continua incluindo o worker e o Mailpit.
+
+Para uso institucional, configure serviços de produção, SMTP, backups, contas individuais e `DEMO_SEED=false`.
 
 O projeto contém código de MVP para avaliação e continuidade. Leia as decisões e limites em `docs/arquitetura.md` antes de usar em operação institucional.
