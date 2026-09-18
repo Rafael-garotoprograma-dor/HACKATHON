@@ -2,6 +2,34 @@
 
 Sistema da Hackathon Ciência da Computação 2026.2, Anhanguera Guarapari, **Tema 2**. Organiza supervisão, turmas, documentação e consultas da comunidade, com seis perfis de acesso.
 
+## Documentação da entrega
+
+| Material | Acesso |
+|---|---|
+| Explicação do problema, solução e tecnologias | [Apresentação do projeto](docs/apresentacao.md) |
+| Fluxograma do funcionamento | [Fluxo principal](docs/fluxo-principal.md) |
+| Estrutura do sistema e suas conexões | [Arquitetura](docs/arquitetura.md) |
+| Diagrama e descrição das tabelas | [Modelo do banco de dados](docs/banco-de-dados.md) |
+| SQL para criar a estrutura do banco | [schema.sql](database/schema.sql) |
+| Requisitos | [Requisitos do sistema](docs/requisitos.md) |
+| Testes realizados e limites | [Verificação](docs/verificacao.md) |
+
+Os diagramas Mermaid nos documentos são exibidos como gráficos pelo GitHub.
+
+## Organização do código
+
+```text
+app/          Páginas, estilos e API do servidor
+components/   Componentes da interface
+lib/          Regras de negócio, autenticação e acesso aos dados
+database/     Estrutura SQL do PostgreSQL
+scripts/      Inicialização, lembretes, backup e verificações
+tests/        Testes automatizados
+docs/         Documentação da entrega
+```
+
+`Dockerfile` e `compose.yaml` configuram a execução. `package.json` e `package-lock.json` descrevem as dependências. `render.yaml` prepara a hospedagem; a publicação no Render ainda está pendente. A estrutura SQL e o gerador de dados fictícios são versionados; o banco com os dados de uso e seus backups ficam fora do GitHub.
+
 ## Executar com Docker
 
 Requisitos: Docker Desktop iniciado, com contêineres Linux / WSL 2.
@@ -80,7 +108,6 @@ Esses registros são sintéticos, sem relação pretendida com pessoas reais. O 
 - `docs/fluxo-principal.md`: representação Mermaid do fluxo principal e da sequência de segurança.
 - `docs/arquitetura.md`: modelo de dados, decisões e limites.
 - `docs/lgpd.md`: medidas de proteção de dados e pendências institucionais para produção.
-- `docs/fontes/Hackathon_2026_2.pdf` e `docs/fontes/Transferencia_Projeto.md`: fontes usadas para o escopo.
 - Documentos e relatórios de até 5 MB ficam no banco, em `bytea`, simplificando a persistência e o backup do MVP.
 
 ## Desenvolvimento sem Docker

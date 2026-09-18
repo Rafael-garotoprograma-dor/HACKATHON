@@ -7,3 +7,7 @@ node_modules/
 test-results/
 *.log
 backups/
+AGENTS.md
+skills/
+docs/escopo.md
+docs/fontes/

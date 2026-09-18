@@ -32,4 +32,4 @@ A clínica-escola precisa organizar, em um único fluxo, a habilitação de estu
 - Interface responsiva para celular, tablet e computador.
 - Execução reproduzível com Docker e documentação de instalação, testes, banco e fluxo.
 
-As decisões detalhadas e os limites conhecidos estão em [arquitetura.md](arquitetura.md) e as fontes fornecidas para a Hackathon estão em [fontes](fontes/).
+As decisões detalhadas e os limites conhecidos estão em [arquitetura.md](arquitetura.md). O projeto atende ao Tema 2 da Hackathon Ciência da Computação 2026.2, Anhanguera Guarapari.

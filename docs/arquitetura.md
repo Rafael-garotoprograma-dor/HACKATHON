@@ -15,6 +15,28 @@ flowchart LR
 
 ## Estrutura principal
 
+### Conexões entre os componentes
+
+```mermaid
+flowchart TB
+    U[Master, Secretaria, professor, preceptor, aluno e paciente] --> UI[Interface web React e CSS]
+    UI -->|Requisições HTTP e cookie de sessão| API[API Next.js]
+    API --> AUTH[Autenticação e autorização]
+    AUTH --> RULES[Regras acadêmicas, agenda e capacidade]
+    RULES -->|SQL parametrizado e transações| DB[(PostgreSQL)]
+    DB -->|Dados permitidos para o perfil| API
+    API -->|Resposta JSON| UI
+    UI -->|Solicitação de documento ou relatório| FILES[Rota privada de arquivos]
+    FILES --> AUTH
+    FILES -->|Leitura autorizada| DB
+    W[Worker Node.js] -->|Consulta lembretes e fila de envio| DB
+    W --> SMTP[Servidor de e-mail]
+    SMTP --> EMAIL[Caixa de e-mail do usuário]
+    DB --> BACKUP[Backup restaurável]
+```
+
+A interface, API e rotas de arquivos pertencem à mesma aplicação Next.js. O worker é um processo separado que compartilha o PostgreSQL. Na demonstração local, o Mailpit recebe os e-mails; para entrega real das mensagens é necessário configurar um servidor SMTP.
+
 ```mermaid
 erDiagram
  users ||--o{ documents : envia
