@@ -1,10 +1,10 @@
-# Roteiro de apresentação — Integra
+# Roteiro de apresentação — Integra-Clinica-Anhanguera
 
 Duração sugerida: 10 a 12 minutos. Use exclusivamente o ambiente com dados fictícios. Prepare contas dos seis perfis e uma turma com encontros futuros. Confira os horários antes de apresentar: uma consulta passada não pode ser confirmada.
 
 ## 1. Problema e proposta — 1 minuto
 
-**Fala:** “As clínicas-escola conectam a formação dos estudantes ao atendimento da comunidade. Para uma consulta acontecer, precisamos conciliar documentação, formação acadêmica, supervisão, sala, horário e capacidade. Essas regras mudam a cada semestre. O Integra reúne essa organização em um sistema configurável, com seis perfis de acesso.”
+**Fala:** “As clínicas-escola conectam a formação dos estudantes ao atendimento da comunidade. Para uma consulta acontecer, precisamos conciliar documentação, formação acadêmica, supervisão, sala, horário e capacidade. Essas regras mudam a cada semestre. O Integra-Clinica-Anhanguera reúne essa organização em um sistema configurável, com seis perfis de acesso.”
 
 **Mostrar:** página de entrada e o fluxograma da documentação.
 
@@ -14,7 +14,7 @@ Duração sugerida: 10 a 12 minutos. Use exclusivamente o ambiente com dados fic
 
 **Mostrar:** estrutura do repositório: `app` contém páginas e API; `components`, os componentes visuais; `lib`, regras e acesso aos dados; `database`, estrutura SQL; `tests`, testes automatizados; `docs`, documentação.
 
-**Fala:** “Docker Compose inicia a aplicação, o banco, o worker de e-mails e o Mailpit, usado para conferir mensagens localmente. Usamos Git e GitHub para versionamento. A configuração de hospedagem no Render está preparada, mas a publicação ainda precisa ser concluída. Os testes isolados usam PGlite; o ambiente Docker usa PostgreSQL.”
+**Fala:** “Docker Compose inicia a aplicação, o banco, o worker de e-mails e o Mailpit, usado para conferir mensagens localmente. Usamos Git e GitHub para versionamento. A demonstração está publicada em https://clinica-escola-web.onrender.com, com site e banco gratuitos, sem envio automático de e-mails. Os testes isolados usam PGlite; o ambiente Docker usa PostgreSQL.”
 
 ## 3. Master — 1 minuto e meio
 
@@ -74,7 +74,7 @@ Duração sugerida: 10 a 12 minutos. Use exclusivamente o ambiente com dados fic
 
 ## Preparação da demonstração
 
-1. Inicie Docker Desktop e o projeto; confira login e banco.
+1. Para apresentar a versão pública, abra https://clinica-escola-web.onrender.com com antecedência e confira o login. Para apresentar a versão local, inicie Docker Desktop e o projeto. Os bancos são independentes.
 2. Use uma turma aprovada, preceptor confirmado e estudante habilitado para mostrar uma reserva válida.
 3. Use outra conta de aluno ainda pendente para demonstrar a restrição acadêmica.
 4. Para demonstrar relatórios, escolha encontro e horário dentro das regras de prazo.

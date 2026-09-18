@@ -1,4 +1,4 @@
-# Integra — Gestão das Clínicas-Escola
+# Integra-Clinica-Anhanguera
 
 ## O problema
 
@@ -8,7 +8,7 @@ Informações dispersas dificultam a verificação de documentos, favorecem conf
 
 ## A solução desenvolvida
 
-O Integra centraliza a gestão acadêmica e os agendamentos em um sistema web com seis perfis: Master, Secretaria, professor, preceptor, aluno e paciente. Cada perfil acessa as informações e operações necessárias à sua função.
+O Integra-Clinica-Anhanguera centraliza a gestão acadêmica e os agendamentos em um sistema web com seis perfis: Master, Secretaria, professor, preceptor, aluno e paciente. Cada perfil acessa as informações e operações necessárias à sua função.
 
 O Master configura as regras de funcionamento. O preceptor oferece horários, salas e limites de supervisão; o professor cria turmas a partir dessa disponibilidade. O aluno envia documentos para validação por professor autorizado no curso e, após aprovação, escolhe uma turma compatível e com vaga. Essa validação inicial não obriga o aluno a escolher a turma do professor avaliador.
 
@@ -39,6 +39,6 @@ O código separa componentes visuais, rotas da API, regras de negócio, autentic
 
 ## Resultado e limites
 
-Foi desenvolvido um MVP com persistência real, execução por Docker, dados fictícios reproduzíveis e testes automatizados. A publicação no GitHub está concluída; há uma configuração preparada para o Render, mas a hospedagem ainda está pendente.
+Foi desenvolvido um MVP com persistência real, execução por Docker, dados fictícios reproduzíveis e testes automatizados. O código está no GitHub e a demonstração está publicada em [clinica-escola-web.onrender.com](https://clinica-escola-web.onrender.com). A tela de login foi verificada; a validação completa das operações no ambiente hospedado ainda está pendente. O plano gratuito não executa o worker de e-mails.
 
 O sistema é uma ferramenta de gestão acadêmica e agendamento. Não inclui prontuário clínico completo, assinatura digital nem fila automática de pacientes. Os resultados de testes e demais limites estão em [verificacao.md](verificacao.md) e [arquitetura.md](arquitetura.md).

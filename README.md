@@ -1,4 +1,8 @@
-# Integra — Clínicas-Escola
+# Integra-Clinica-Anhanguera
+
+**Acesse o sistema publicado:** [https://clinica-escola-web.onrender.com](https://clinica-escola-web.onrender.com)
+
+O link público funciona sem Docker no computador. `http://localhost:3000` é o endereço da instalação local. Cada ambiente possui seu próprio banco.
 
 Sistema da Hackathon Ciência da Computação 2026.2, Anhanguera Guarapari, **Tema 2**. Organiza supervisão, turmas, documentação e consultas da comunidade, com seis perfis de acesso.
 
@@ -29,7 +33,7 @@ tests/        Testes automatizados
 docs/         Documentação da entrega
 ```
 
-`Dockerfile` e `compose.yaml` configuram a execução. `package.json` e `package-lock.json` descrevem as dependências. `render.yaml` prepara a hospedagem; a publicação no Render ainda está pendente. A estrutura SQL e o gerador de dados fictícios são versionados; o banco com os dados de uso e seus backups ficam fora do GitHub.
+`Dockerfile` e `compose.yaml` configuram a execução. `package.json` e `package-lock.json` descrevem as dependências. `render.yaml` configura a demonstração gratuita já publicada no Render. A estrutura SQL e o gerador de dados fictícios são versionados; o banco com os dados de uso e seus backups ficam fora do GitHub.
 
 ## Executar com Docker
 
@@ -174,7 +178,7 @@ Repositório desta entrega: https://github.com/Rafael-garotoprograma-dor/HACKATH
 
 O `render.yaml` configura a demonstração gratuita com um serviço web Docker e PostgreSQL, sem worker. No Render, escolha **New > Blueprint**, selecione este repositório e a branch `main`.
 
-Preencha `APP_ORIGIN` com a URL HTTPS exata do serviço web, sem barra final, e `DEMO_PASSWORD` com uma senha exclusiva de pelo menos 10 caracteres. Se a URL ainda não estiver disponível, use provisoriamente `https://example.invalid` e corrija em Environment assim que o Render atribuir o endereço, antes de testar o login.
+Para esta implantação, `APP_ORIGIN` deve ser `https://clinica-escola-web.onrender.com`, sem barra final. `DEMO_PASSWORD` define a senha inicial dos seis perfis fictícios no banco vazio; use o valor escolhido no painel do Render. A senha do exemplo local não é necessariamente a senha hospedada.
 
 `DEMO_SEED=true` cria os seis perfis fictícios em um banco vazio. O banco hospedado é independente do banco local: os cadastros feitos no computador não são transferidos automaticamente. A senha é definida apenas na primeira carga; mudar a variável depois não troca as senhas existentes.
 
