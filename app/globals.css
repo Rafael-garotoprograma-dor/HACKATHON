@@ -15,8 +15,8 @@ button:focus-visible,a:focus-visible{outline:3px solid var(--focus);outline-offs
 .brand-icon{background:var(--accent);color:#201e1c}
 .login-page{grid-template-columns:minmax(0,45%) minmax(0,55%);background:#fffdfb}
 .login-story{background:#f4eadc;color:var(--ink);padding:42px clamp(28px,4vw,64px);border-right:1px solid var(--line)}
-.login-story:before{content:'';position:absolute;width:300px;height:300px;right:-160px;bottom:12%;border:55px solid var(--accent);border-radius:50%;opacity:.12;pointer-events:none}
-.login-story:after{width:480px;height:480px;left:-230px;top:45%;border-color:#d6c3ae;opacity:.6}
+.login-story:before{content:'';position:absolute;width:90%;height:340px;right:-8%;bottom:10%;background:url('/images/anhanguera-logo.png') center/contain no-repeat;border:0;border-radius:0;opacity:.12;mix-blend-mode:multiply;pointer-events:none}
+.login-story:after{content:none}
 .login-story .brand-icon{background:var(--accent);color:#201e1c}
 .login-story .brand-caption{color:#615248}
 .story-content{padding:52px 0}
