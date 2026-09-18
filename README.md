@@ -11,7 +11,6 @@ Sistema da Hackathon Ciência da Computação 2026.2, Anhanguera Guarapari, **Te
 | Material | Acesso |
 |---|---|
 | Explicação do problema, solução e tecnologias | [Apresentação do projeto](docs/apresentacao.md) |
-| Roteiro de demonstração dos seis perfis | [Roteiro de apresentação](docs/roteiro-apresentacao.md) |
 | Fluxograma do funcionamento | [Fluxo principal](docs/fluxo-principal.md) |
 | Estrutura do sistema e suas conexões | [Arquitetura](docs/arquitetura.md) |
 | Diagrama e descrição das tabelas | [Modelo do banco de dados](docs/banco-de-dados.md) |
