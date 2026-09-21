@@ -25,7 +25,7 @@ export function initialize(){return ready??=transaction(async db=>{
 });}
 
 async function migrateDemoRoster(db:import('./db').DB){
- if(await one(db,"SELECT id FROM data_migrations WHERE id='demo-roster-3'"))return;
+ if(await one(db,"SELECT id FROM data_migrations WHERE id='demo-roster-4'"))return;
  const hash=(await one(db,"SELECT password FROM users WHERE role='master' OR role='professor' OR role='preceptor' LIMIT 1"))?.password;
  if(!hash)return;
  const master=demoPeople.find(p=>p.id==='master')!, prof=demoPeople.find(p=>p.id==='professor')!, prec=demoPeople.find(p=>p.id==='preceptor')!;
@@ -46,5 +46,5 @@ async function migrateDemoRoster(db:import('./db').DB){
   await db.query("INSERT INTO documents(id,student_id,kind,filename,mime,content,status) SELECT $1,$2,$3,$4,'text/plain',$5,'aprovado' WHERE NOT EXISTS(SELECT 1 FROM documents WHERE student_id=$2 AND kind=$3)",[id(),studentId,kind,`matricula-${studentId}.txt`,Buffer.from(`Documento fictício de ${name}.`)]);
   for(const cls of (await db.query("SELECT id FROM classes WHERE active=true AND semester=(SELECT data->>'semester' FROM settings WHERE id=1)")).rows)await db.query("INSERT INTO enrollments(id,class_id,student_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",[id(),cls.id,studentId]);
  }
- await db.query("INSERT INTO data_migrations(id) VALUES('demo-roster-3')");
+ await db.query("INSERT INTO data_migrations(id) VALUES('demo-roster-4')");
 }
