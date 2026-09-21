@@ -5,7 +5,7 @@ let ready:Promise<void>|undefined;
 export function initialize(){return ready??=transaction(async db=>{
  const today=localDay();const end=new Date();end.setDate(end.getDate()+90);
  await db.query('INSERT INTO settings(id,data) VALUES(1,$1) ON CONFLICT DO NOTHING',[JSON.stringify({semester:'2026.2',start:today,end:localDay(end),enrollmentEnd:localDay(end),open:'07:00',close:'20:00',weekdays:[0,1,2,3,4,5,6],courses:['Odontologia','Fisioterapia','Nutrição','Psicologia'],documents:['Comprovante de matrícula'],reportDeadline:'23:59',cancelHours:24,clinicStudents:60,clinicPatients:20,archived:false})]);
- if(process.env.DEMO_ROSTER_VERSION==='2')await migrateDemoRoster(db);
+ if(process.env.DEMO_ROSTER_VERSION==='2'||process.env.NODE_ENV==='production')await migrateDemoRoster(db);
  if(process.env.DEMO_SEED!=='true'||await one(db,'SELECT id FROM users LIMIT 1'))return;
  const password=process.env.DEMO_PASSWORD;if(!password||password.length<10)throw new Error('DEMO_PASSWORD deve ter ao menos 10 caracteres.');
  const hash=hashPassword(password);
