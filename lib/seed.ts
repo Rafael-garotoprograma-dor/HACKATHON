@@ -25,7 +25,7 @@ export function initialize(){return ready??=transaction(async db=>{
 });}
 
 async function migrateDemoRoster(db:import('./db').DB){
- if(await one(db,"SELECT id FROM data_migrations WHERE id='demo-roster-2'"))return;
+ if(await one(db,"SELECT id FROM data_migrations WHERE id='demo-roster-3'"))return;
  const hash=(await one(db,"SELECT password FROM users WHERE role='master' OR role='professor' OR role='preceptor' LIMIT 1"))?.password;
  if(!hash)return;
  const master=demoPeople.find(p=>p.id==='master')!, prof=demoPeople.find(p=>p.id==='professor')!, prec=demoPeople.find(p=>p.id==='preceptor')!;
@@ -34,5 +34,17 @@ async function migrateDemoRoster(db:import('./db').DB){
  await db.query('UPDATE users SET name=$2,email=$3,birth=$4,sex=$5,phone=$6,active=true WHERE id=$1',[prec.id,prec.name,prec.email,prec.birth,prec.sex,prec.phone]);
  for(const p of demoPeople.filter(p=>['professor-delvani','preceptor-diego'].includes(p.id)))await db.query('INSERT INTO users(id,name,email,cpf,password,role,course,period,approved,permissions,subjects,birth,sex,phone) VALUES($1,$2,$3,$4,$5,$6,$7,1,true,$8,$9,$10,$11,$12) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,email=EXCLUDED.email,active=true',[p.id,p.name,p.email,p.cpf,hash,p.role,p.role==='professor'?'Odontologia':'',JSON.stringify(['Odontologia','Fisioterapia','Nutrição','Psicologia']),JSON.stringify([]),p.birth,p.sex,p.phone]);
  await db.query("UPDATE users SET active=false WHERE role IN ('professor','preceptor') AND id NOT IN ('professor','professor-delvani','preceptor','preceptor-diego')");
- await db.query("INSERT INTO data_migrations(id) VALUES('demo-roster-2')");
+ const students=[
+  ['aluno-2','Rafael Gomes de Oliveira','rafael.gomes@alunos.test','44455566677','2002-04-11'],
+  ['aluno-3','Camila Ferreira Nunes','camila.nunes@alunos.test','55566677788','2003-10-19'],
+  ['aluno-4','João Pedro Martins','joao.martins@alunos.test','66677788899','2001-12-03'],
+  ['aluno-5','Sofia Almeida Costa','sofia.costa@alunos.test','77788899900','2004-02-27'],
+ ] as const;
+ for(const [studentId,name,email,cpf,birth] of students){
+  await db.query('INSERT INTO users(id,name,email,cpf,password,role,course,period,registration,approved,permissions,subjects,birth,sex,phone) VALUES($1,$2,$3,$4,$5,\'aluno\',\'Odontologia\',8,$6,true,$7,$8,$9,\'Não informado\',$10) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,email=EXCLUDED.email,active=true,approved=true',[studentId,name,email,cpf,hash,`202600${studentId.slice(-1)}`,JSON.stringify(['Odontologia']),JSON.stringify(['Clínica integrada']),birth,'(27) 90000-02'+studentId.slice(-1)]);
+  const kind=(await one(db,"SELECT data->'documents'->>0 AS kind FROM settings WHERE id=1"))?.kind||'Comprovante de matrícula';
+  await db.query("INSERT INTO documents(id,student_id,kind,filename,mime,content,status) SELECT $1,$2,$3,$4,'text/plain',$5,'aprovado' WHERE NOT EXISTS(SELECT 1 FROM documents WHERE student_id=$2 AND kind=$3)",[id(),studentId,kind,`matricula-${studentId}.txt`,Buffer.from(`Documento fictício de ${name}.`)]);
+  for(const cls of (await db.query("SELECT id FROM classes WHERE active=true AND semester=(SELECT data->>'semester' FROM settings WHERE id=1)")).rows)await db.query("INSERT INTO enrollments(id,class_id,student_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING",[id(),cls.id,studentId]);
+ }
+ await db.query("INSERT INTO data_migrations(id) VALUES('demo-roster-3')");
 }

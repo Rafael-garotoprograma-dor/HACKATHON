@@ -43,7 +43,7 @@ services:
       - key: SHOW_DEMO_ACCOUNTS
         value: "true"
       - key: DEMO_ROSTER_VERSION
-        value: "2"
+        value: "3"
 
 databases:
   - name: clinica-escola-db
