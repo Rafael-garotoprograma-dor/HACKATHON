@@ -1,6 +1,7 @@
 import { type DB, type Row, one } from './db';
 import { clinicContact } from './clinic-contact';
 import { bookingActions } from './booking-actions';
+import { updateClass } from './class-management';
 import { AppError, requireThat, id, text, integer, timeValid, minutes, time, localDay, startInstant, dateValid, hashPassword, cpfValid } from './security';
 export type User=Row & {id:string;role:string;name:string;course:string;approved:boolean;permissions:string[];subjects:string[];period:number};
 export async function config(db:DB){return (await one(db,'SELECT data FROM settings WHERE id=1')).data;}
@@ -12,7 +13,7 @@ export async function notice(db:DB,userId:string,subject:string,body:string,emai
 }
 async function notifyRole(db:DB,role:string,subject:string,body:string){for(const u of (await db.query('SELECT id FROM users WHERE role=$1 AND active=true',[role])).rows)await notice(db,u.id,subject,body);}
 async function audit(db:DB,u:User,action:string,target:string){await db.query('INSERT INTO audit(id,user_id,action,target) VALUES($1,$2,$3,$4)',[id(),u.id,action,target]);}
-export async function meetingInfo(db:DB,meetingId:string){const m=await one(db,`SELECT m.*, c.name,c.course,c.periods,c.prerequisites,c.professor_id,c.active AS class_active,c.semester,c.duration,a.start_time,a.end_time,a.students,a.patients,a.weekday,r.active AS room_active,r.students AS room_students,r.patients AS room_patients,r.equipment FROM meetings m JOIN classes c ON c.id=m.class_id JOIN availability a ON a.id=c.availability_id JOIN rooms r ON r.id=m.room_id WHERE m.id=$1`,[meetingId]);requireThat(m,'Encontro não encontrado.',404);return m;}
+export async function meetingInfo(db:DB,meetingId:string){const m=await one(db,`SELECT m.*, c.name,c.course,c.periods,c.prerequisites,c.professor_id,c.active AS class_active,c.semester,c.duration,COALESCE(m.start_time,a.start_time) AS start_time,COALESCE(m.end_time,a.end_time) AS end_time,a.students,a.patients,a.weekday,r.active AS room_active,r.students AS room_students,r.patients AS room_patients,r.equipment FROM meetings m JOIN classes c ON c.id=m.class_id JOIN availability a ON a.id=c.availability_id JOIN rooms r ON r.id=m.room_id WHERE m.id=$1`,[meetingId]);requireThat(m,'Encontro não encontrado.',404);return m;}
 async function classInfo(db:DB,classId:string){const c=await one(db,`SELECT c.*,a.preceptor_id,a.room_id,a.weekday,a.start_time,a.end_time,a.students,a.patients,r.students AS room_students,r.active AS room_active FROM classes c JOIN availability a ON a.id=c.availability_id JOIN rooms r ON r.id=a.room_id WHERE c.id=$1`,[classId]);requireThat(c,'Turma não encontrada.',404);return c;}
 const permits=(u:User,c:Row)=>u.approved&&u.course===c.course&&c.periods.includes(u.period)&&c.prerequisites.every((s:string)=>u.subjects.includes(s));
 async function documentsReady(db:DB,u:User){const cfg=await config(db);const docs=(await db.query("SELECT DISTINCT kind FROM documents WHERE student_id=$1 AND status='aprovado'",[u.id])).rows;return cfg.documents.every((kind:string)=>docs.some(d=>d.kind===kind));}
@@ -90,6 +91,9 @@ export async function mutate(db:DB,u:User,action:string,p:Row){
   if(p.id){const previous=await one(db,'SELECT * FROM availability WHERE id=$1',[p.id]);requireThat(previous&&(u.role==='master'||previous.preceptor_id===u.id),'Disponibilidade de outro preceptor.',403);if(await one(db,'SELECT id FROM classes WHERE availability_id=$1',[p.id]))requireThat(previous.room_id===r.id&&previous.weekday===weekday&&previous.start_time===start&&previous.end_time===end&&previous.preceptor_id===preceptor.id,'Horário já utilizado por uma turma. Crie outra disponibilidade e ajuste os encontros individualmente para preservar o histórico.');}
   await db.query('INSERT INTO availability VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(id) DO UPDATE SET preceptor_id=EXCLUDED.preceptor_id,room_id=EXCLUDED.room_id,weekday=EXCLUDED.weekday,start_time=EXCLUDED.start_time,end_time=EXCLUDED.end_time,students=EXCLUDED.students,patients=EXCLUDED.patients',[target,preceptor.id,r.id,weekday,start,end,integer(p.students,1,r.students),integer(p.patients,1,Math.min(r.patients,r.equipment))]);break;
  }
+ case 'class-update':{
+  roles(u,'master');await updateClass(db,p);break;
+ }
  case 'class-rules':{
   roles(u,'master','professor');const c=await classInfo(db,p.id);requireThat(u.role==='master'||c.professor_id===u.id,'Turma de outro professor.',403);const periods=(p.periods||[]).map((v:unknown)=>integer(v,1,20));requireThat(periods.length&&text(p.name),'Informe nome e períodos.');const duration=integer(p.duration,10,480);requireThat(duration<=minutes(c.end_time)-minutes(c.start_time),'Duração maior que o encontro.');if(duration!==c.duration)requireThat(!await one(db,"SELECT b.id FROM bookings b JOIN meetings m ON m.id=b.meeting_id WHERE m.class_id=$1",[c.id]),'Há consultas no histórico desta turma. Crie outra turma para usar uma duração diferente.');await db.query('UPDATE classes SET name=$2,periods=$3,prerequisites=$4,duration=$5 WHERE id=$1',[c.id,text(p.name),JSON.stringify(periods),JSON.stringify(p.prerequisites||[]),duration]);break;
  }
@@ -117,15 +121,22 @@ export async function mutate(db:DB,u:User,action:string,p:Row){
   roles(u,'aluno');requireThat(localDay()<=cfg.enrollmentEnd,'Inscrições encerradas. Solicite transferência ao professor.');await ensureEnrollment(db,u,p.class_id);await db.query('INSERT INTO enrollments(id,class_id,student_id) VALUES($1,$2,$3)',[target,p.class_id,u.id]);break;
  }
  case 'booking':{
-  roles(u,'paciente','secretaria','master');const ownerId=u.role==='paciente'?u.id:text(p.owner_id);const owner=await one(db,"SELECT * FROM users WHERE id=$1 AND role='paciente' AND active=true",[ownerId]);requireThat(owner,'Selecione um paciente cadastrado.');const m=await meetingInfo(db,p.meeting_id);const slots=await availableSlots(db,m);requireThat(slots.some(s=>s.time===p.slot),'Esta vaga não está mais disponível. Atualize a agenda.');
+  roles(u,'paciente','secretaria');const ownerId=u.role==='paciente'?u.id:text(p.owner_id);const owner=await one(db,"SELECT * FROM users WHERE id=$1 AND role='paciente' AND active=true",[ownerId]);requireThat(owner,'Selecione um paciente cadastrado.');const m=await meetingInfo(db,p.meeting_id);requireThat(m.status==='aberto','Encontro indisponível.');
   const patient=p.patient?.type==='proprio'?{type:'proprio',name:owner.name,cpf:owner.cpf}:p.patient;requireThat(patient&&text(patient.name)&&cpfValid(text(patient.cpf).replace(/\D/g,'')),'Nome e CPF da pessoa atendida são obrigatórios.');requireThat(['proprio','menor','idoso'].includes(patient.type),'Tipo de atendimento inválido.');if(patient.type!=='proprio')requireThat(text(patient.relationship),'Informe o parentesco.');if(patient.type==='idoso')requireThat(text(patient.limitation),'Informe a necessidade de acompanhamento.');
   const clean={type:patient.type,name:text(patient.name),cpf:text(patient.cpf).replace(/\D/g,''),relationship:text(patient.relationship),limitation:text(patient.limitation,500)};
-  const existing=(await db.query("SELECT b.*,c.duration FROM bookings b JOIN meetings m ON m.id=b.meeting_id JOIN classes c ON c.id=m.class_id WHERE m.day=$1 AND b.status IN ('agendado','confirmado') AND (b.owner_id=$2 OR b.patient->>'cpf'=$3)",[m.day,ownerId,clean.cpf])).rows;
-  requireThat(!existing.some(b=>minutes(b.slot)<minutes(p.slot)+m.duration&&minutes(b.slot)+b.duration>minutes(p.slot)),'Paciente ou responsável já possui atendimento nesse horário.');
-  await db.query('INSERT INTO bookings(id,meeting_id,owner_id,patient,slot) VALUES($1,$2,$3,$4,$5)',[target,m.id,ownerId,JSON.stringify(clean),p.slot]);await notice(db,ownerId,'Consulta agendada',`${m.name}: ${m.day} às ${p.slot}.`,true);break;
+  const remaining=(await db.query("SELECT id FROM meetings WHERE class_id=$1 AND day>=$2 AND status='aberto' ORDER BY day",[m.class_id,m.day])).rows;
+  requireThat(remaining.length>0,'Não há encontros disponíveis.');
+  for(const row of remaining){
+   const next=await meetingInfo(db,row.id);
+   const slots=await availableSlots(db,next);requireThat(slots.some(s=>s.time===p.slot),`Sem vaga às ${p.slot} em ${next.day}. Escolha um horário disponível em todos os encontros restantes.`);
+   const existing=(await db.query("SELECT b.*,c.duration FROM bookings b JOIN meetings m ON m.id=b.meeting_id JOIN classes c ON c.id=m.class_id WHERE m.day=$1 AND b.status IN ('agendado','confirmado') AND (b.owner_id=$2 OR b.patient->>'cpf'=$3)",[next.day,ownerId,clean.cpf])).rows;
+   requireThat(!existing.some(b=>minutes(b.slot)<minutes(p.slot)+next.duration&&minutes(b.slot)+b.duration>minutes(p.slot)),`Paciente ou responsável já possui atendimento nesse horário em ${next.day}.`);
+   await db.query('INSERT INTO bookings(id,meeting_id,owner_id,patient,slot,series_id) VALUES($1,$2,$3,$4,$5,$6)',[next.id===m.id?target:id(),next.id,ownerId,JSON.stringify(clean),p.slot,target]);
+  }
+  await notice(db,ownerId,'Acompanhamento agendado',`${m.name}: ${remaining.length} encontros a partir de ${m.day}, às ${p.slot}, até o fim da turma no semestre.`,true);break;
  }
  case 'booking-status':{
-  const b=await one(db,'SELECT * FROM bookings WHERE id=$1',[p.id]);requireThat(b,'Consulta não encontrada.');requireThat(isStaff(u)||b.owner_id===u.id,'Consulta de outro paciente.',403);requireThat(['confirmado','cancelado_paciente','reagendado','nao_compareceu'].includes(p.status),'Status inválido.');const m=await meetingInfo(db,b.meeting_id);
+  roles(u,'paciente','secretaria');const b=await one(db,'SELECT * FROM bookings WHERE id=$1',[p.id]);requireThat(b,'Consulta não encontrada.');requireThat(u.role==='secretaria'||b.owner_id===u.id,'Consulta de outro paciente.',403);requireThat(['confirmado','cancelado_paciente','reagendado','nao_compareceu'].includes(p.status),'Status inválido.');const m=await meetingInfo(db,b.meeting_id);
   if(p.status==='reagendado'){roles(u,'secretaria','master');requireThat(b.status==='cancelado_instituicao','Consulta não aguardava reagendamento.');}
   else {requireThat(['agendado','confirmado'].includes(b.status),'Consulta já encerrada.');if(p.status==='nao_compareceu'){roles(u,'secretaria','master');requireThat(startInstant(m.day,b.slot)<new Date(),'Atendimento ainda não ocorreu.');}else requireThat(startInstant(m.day,b.slot)>new Date(),'Horário da consulta já passou.');}
   if(p.status==='cancelado_paciente'&&!isStaff(u)){const controls=bookingActions({status:b.status,slot:b.slot},m.day,cfg.cancelHours);requireThat(controls.canCancelNormally||(p.decline===true&&controls.canDecline),'Prazo de cancelamento online encerrado. Procure a Secretaria.');}

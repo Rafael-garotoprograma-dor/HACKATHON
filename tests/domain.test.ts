@@ -17,6 +17,12 @@ test('Fluxos e invariantes do sistema',async t=>{
  const master=await user('master'),student=await user('aluno'),patient=await user('paciente'),prof=await user('professor'),preceptor=await user('preceptor');
  const run=(u:User,a:string,p:any)=>transaction(tx=>mutate(tx,u,a,p));
  try{
+ await t.test('Somente paciente e Secretaria podem operar consultas',async()=>{
+  const meeting=await one(db,"SELECT id FROM meetings WHERE day>$1 ORDER BY day LIMIT 1",[localDay()]);
+  await assert.rejects(run(master,'booking',{meeting_id:meeting.id,slot:'08:00',patient:{type:'proprio'}}),/permissão/);
+  await assert.rejects(run(prof,'booking',{meeting_id:meeting.id,slot:'08:00',patient:{type:'proprio'}}),/permissão/);
+  await assert.rejects(run(student,'booking-status',{id:'inexistente',status:'confirmado'}),/permissão/);
+ });
  await t.test('Senhas são verificadas por hash e CPF tem dígitos verificadores',()=>{const hash=hashPassword('UmaSenhaSegura!');assert.notEqual(hash,'UmaSenhaSegura!');assert.equal(verifyPassword('UmaSenhaSegura!',hash),true);assert.equal(verifyPassword('errada',hash),false);assert.equal(cpfValid('11144477735'),true);assert.equal(cpfValid('00000000000'),false);});
  await t.test('Aluno não altera configurações administrativas',async()=>{await assert.rejects(run(student,'settings',{data:{}}),/permissão/);});
  await t.test('Endereço e telefone são configuráveis pelo Master e persistem',async()=>{

@@ -5,6 +5,7 @@ let ready:Promise<void>|undefined;
 export function initialize(){return ready??=transaction(async db=>{
  const today=localDay();const end=new Date();end.setDate(end.getDate()+90);
  await db.query('INSERT INTO settings(id,data) VALUES(1,$1) ON CONFLICT DO NOTHING',[JSON.stringify({semester:'2026.2',start:today,end:localDay(end),enrollmentEnd:localDay(end),open:'07:00',close:'20:00',weekdays:[0,1,2,3,4,5,6],courses:['Odontologia','Fisioterapia','Nutrição','Psicologia'],documents:['Comprovante de matrícula'],reportDeadline:'23:59',cancelHours:24,clinicStudents:60,clinicPatients:20,archived:false})]);
+ if(process.env.DEMO_ROSTER_VERSION==='2')await migrateDemoRoster(db);
  if(process.env.DEMO_SEED!=='true'||await one(db,'SELECT id FROM users LIMIT 1'))return;
  const password=process.env.DEMO_PASSWORD;if(!password||password.length<10)throw new Error('DEMO_PASSWORD deve ter ao menos 10 caracteres.');
  const hash=hashPassword(password);
@@ -22,3 +23,16 @@ export function initialize(){return ready??=transaction(async db=>{
  const meeting=await one(db,"SELECT id FROM meetings WHERE day>$1 ORDER BY day LIMIT 1",[today]);
  if(meeting)await db.query('INSERT INTO bookings(id,meeting_id,owner_id,patient,slot) VALUES($1,$2,$3,$4,$5)',[id(),meeting.id,'paciente',JSON.stringify({name:demoPeople[5].name,cpf:demoPeople[5].cpf,type:'proprio'}),'09:00']);
 });}
+
+async function migrateDemoRoster(db:import('./db').DB){
+ if(await one(db,"SELECT id FROM data_migrations WHERE id='demo-roster-2'"))return;
+ const hash=(await one(db,"SELECT password FROM users WHERE role='master' OR role='professor' OR role='preceptor' LIMIT 1"))?.password;
+ if(!hash)return;
+ const master=demoPeople.find(p=>p.id==='master')!, prof=demoPeople.find(p=>p.id==='professor')!, prec=demoPeople.find(p=>p.id==='preceptor')!;
+ await db.query('UPDATE users SET name=$2,email=$3,birth=$4,sex=$5,phone=$6,active=true WHERE id=$1',[master.id,master.name,master.email,master.birth,master.sex,master.phone]);
+ await db.query('UPDATE users SET name=$2,email=$3,birth=$4,sex=$5,phone=$6,active=true WHERE id=$1',[prof.id,prof.name,prof.email,prof.birth,prof.sex,prof.phone]);
+ await db.query('UPDATE users SET name=$2,email=$3,birth=$4,sex=$5,phone=$6,active=true WHERE id=$1',[prec.id,prec.name,prec.email,prec.birth,prec.sex,prec.phone]);
+ for(const p of demoPeople.filter(p=>['professor-delvani','preceptor-diego'].includes(p.id)))await db.query('INSERT INTO users(id,name,email,cpf,password,role,course,period,approved,permissions,subjects,birth,sex,phone) VALUES($1,$2,$3,$4,$5,$6,$7,1,true,$8,$9,$10,$11,$12) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,email=EXCLUDED.email,active=true',[p.id,p.name,p.email,p.cpf,hash,p.role,p.role==='professor'?'Odontologia':'',JSON.stringify(['Odontologia','Fisioterapia','Nutrição','Psicologia']),JSON.stringify([]),p.birth,p.sex,p.phone]);
+ await db.query("UPDATE users SET active=false WHERE role IN ('professor','preceptor') AND id NOT IN ('professor','professor-delvani','preceptor','preceptor-diego')");
+ await db.query("INSERT INTO data_migrations(id) VALUES('demo-roster-2')");
+}

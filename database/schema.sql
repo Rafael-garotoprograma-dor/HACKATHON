@@ -33,3 +33,8 @@ CREATE TABLE IF NOT EXISTS room_blocks (id text PRIMARY KEY,room_id text NOT NUL
 CREATE TABLE IF NOT EXISTS absences (id text PRIMARY KEY,user_id text NOT NULL REFERENCES users(id),start_day text NOT NULL,end_day text NOT NULL);
 ALTER TABLE meetings ADD COLUMN IF NOT EXISTS student_limit integer;
 ALTER TABLE meetings ADD COLUMN IF NOT EXISTS patient_limit integer;
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS start_time text;
+ALTER TABLE meetings ADD COLUMN IF NOT EXISTS end_time text;
+ALTER TABLE bookings ADD COLUMN IF NOT EXISTS series_id text;
+CREATE INDEX IF NOT EXISTS bookings_series ON bookings(series_id);
+CREATE TABLE IF NOT EXISTS data_migrations (id text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now());

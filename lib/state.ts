@@ -14,7 +14,16 @@ export async function snapshot(db:DB,u:User){
  const enrollments=allEnrollments.filter(e=>staff||e.student_id===u.id||substituteClasses.includes(e.class_id)||allClasses.some(c=>c.id===e.class_id&&relevant(c)));
  const allMeetings=(await db.query('SELECT * FROM meetings ORDER BY day')).rows;
  const meetings:Record<string,any>[]=[];
- for(const m of allMeetings){const c=classes.find(c=>c.id===m.class_id);if(!c&&m.preceptor_id!==u.id)continue;const info=await meetingInfo(db,m.id);meetings.push({...m,slots:await availableSlots(db,info)});}
+ for(const m of allMeetings){const c=classes.find(c=>c.id===m.class_id);if(!c&&m.preceptor_id!==u.id)continue;const info=await meetingInfo(db,m.id);meetings.push({...m,start_time:info.start_time,end_time:info.end_time,slots:await availableSlots(db,info)});}
+ if(['paciente','secretaria'].includes(u.role)){
+  const remaining=new Map<string,Map<string,number>>();
+  for(const m of [...meetings].reverse()){
+   if(m.status!=='aberto'||m.day<localDay())continue;
+   const later=remaining.get(m.class_id);
+   m.slots=m.slots.filter((s:any)=>!later||later.has(s.time)).map((s:any)=>({...s,remaining:Math.min(s.remaining,later?.get(s.time)??s.remaining)}));
+   remaining.set(m.class_id,new Map(m.slots.map((s:any)=>[s.time,s.remaining])));
+  }
+ }
  const meetingIds=meetings.map(m=>m.id);
  const docs=(await db.query('SELECT d.id,d.student_id,d.kind,d.filename,d.status,d.comment,d.created_at,u.course FROM documents d JOIN users u ON u.id=d.student_id ORDER BY d.created_at DESC')).rows.filter(d=>u.role==='master'||d.student_id===u.id||u.role==='professor'&&u.permissions.includes(d.course));
  const reports=(await db.query('SELECT id,meeting_id,author_id,filename,late,comment,attendance,attended_bookings,created_at FROM reports ORDER BY created_at DESC')).rows.filter(r=>r.author_id===u.id||u.role==='professor'&&allMeetings.some(m=>m.id===r.meeting_id&&allClasses.some(c=>c.id===m.class_id&&c.professor_id===u.id)));
