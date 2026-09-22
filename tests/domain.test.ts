@@ -96,6 +96,23 @@ test('Fluxos e invariantes do sistema',async t=>{
  await t.test('Aluno não entrega após prazo e preceptor pode fazer primeira entrega tardia',async()=>{await assert.rejects(run(student,'report',report),/Prazo encerrado/);await run(preceptor,'report',report);await assert.rejects(run(preceptor,'report',report),/Prazo encerrado/);});
  await t.test('Falta registrada dispensa envio do relatório individual',async()=>{await run(prof,'attendance',{meeting_id:pastId,student_id:student.id,status:'ausente'});await assert.rejects(run(student,'report',report),/ausente/);});
  await t.test('Transferência malsucedida preserva matrícula original',async()=>{const tid=id();await db.query("INSERT INTO transfers(id,student_id,from_class,to_class,reason,status) VALUES($1,'aluno','turma-0','turma-1','Teste','encaminhada')",[tid]);await assert.rejects(run(master,'transfer-execute',{ids:[tid]}));assert.ok(await one(db,"SELECT id FROM enrollments WHERE student_id='aluno' AND class_id='turma-0' AND status='ativa'"));assert.equal((await one(db,'SELECT status FROM transfers WHERE id=$1',[tid])).status,'encaminhada');});
+ await t.test('Professor encaminha pedido do aluno sem transferir a matrícula e avisa o Master',async()=>{
+  const request=await run(student,'transfer',{from_class:'turma-0',to_class:'turma-1',reason:'Mudança de horário'});
+  await run(prof,'notice-read',{});
+  const pending=(await snapshot(db,prof)).transfers.find(t=>t.id===request.id);
+  assert.equal(pending?.status,'solicitada');assert.ok(pending?.from_name);assert.ok(pending?.to_name);
+  await assert.rejects(run(master,'transfer-execute',{ids:[request.id]}),/encaminhado/);
+  await assert.rejects(run(student,'transfer-forward',{id:request.id}),/permissão/);
+  const otherProf={...prof,id:'outro-professor'};
+  assert.equal((await snapshot(db,otherProf)).transfers.some(t=>t.id===request.id),false);
+  await assert.rejects(run(otherProf,'transfer-forward',{id:request.id}),/outra turma/);
+  const before=(await one(db,"SELECT count(*)::int AS n FROM notices WHERE user_id='master'")).n;
+  await run(prof,'transfer-forward',{id:request.id});
+  assert.equal((await one(db,'SELECT status FROM transfers WHERE id=$1',[request.id])).status,'encaminhada');
+  assert.equal((await one(db,"SELECT count(*)::int AS n FROM notices WHERE user_id='master'")).n,before+1);
+  assert.ok(await one(db,"SELECT id FROM enrollments WHERE student_id='aluno' AND class_id='turma-0' AND status='ativa'"));
+  await assert.rejects(run(prof,'transfer-forward',{id:request.id}),/já encaminhado/);
+ });
  await t.test('Troca encadeada entre turmas lotadas confirma todos os destinos atomicamente',async()=>{
   await db.query("UPDATE enrollments SET class_id='turma-0' WHERE student_id='aluno3' AND status='ativa'");
   await db.query("UPDATE availability SET students=2 WHERE id IN (SELECT availability_id FROM classes WHERE id IN ('turma-0','turma-2'))");
